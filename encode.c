@@ -20,13 +20,33 @@ char next_character(char source)
   return next;
 }
 
+char previous_character(char source)
+{
+  char previous = '\0';
+
+  if(source == 'a') {
+    previous = 'Z';
+  } else if(source == 'A') {
+    previous = 'z';
+  } else {
+    previous = (char) source - 1;
+  }
+
+  return previous;
+}
+
 char shift_character(char source, int offset)
 {
   int position = 0;
   char shifted = source;
 
-  for(position = 0; position < offset; position++) {
-    shifted = next_character(shifted);
+  for(position = 0; position < abs(offset); position++) {
+    // TODO: use callbacks to supply shifting functions?
+    if(offset < 0) {
+      shifted = previous_character(shifted);
+    } else {
+      shifted = next_character(shifted);
+    }
   }
 
   return shifted;
@@ -44,17 +64,24 @@ int can_shift(char source)
 
 int main(int argc, char *argv[])
 {
-  int i = 0, offset = 1;
+  int i = 0, offset = 1, should_increment = 1;
   char ch;
 
-  while((ch = getopt(argc, argv, "n:")) != -1) {
+  while((ch = getopt(argc, argv, "dn:")) != -1) {
     switch(ch) {
+      case 'd':
+        should_increment = 0;
+        break;
       case 'n':
-        offset = atoi(optarg);
+        offset = abs(atoi(optarg));
         break;
       default:
         break;
     }
+  }
+
+  if(should_increment == 0) {
+    offset = -offset;
   }
 
   char source[BUFFER_SIZE];
