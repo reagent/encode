@@ -5,6 +5,12 @@
 
 #define BUFFER_SIZE 1024
 
+void die(char *message)
+{
+  printf("Got error: '%s', exiting.\n", message);
+  exit(1);
+}
+
 char next_character(char source)
 {
   char next = '\0';
@@ -65,15 +71,21 @@ int can_shift(char source)
 int main(int argc, char *argv[])
 {
   int i = 0, offset = 1, should_increment = 1;
-  char ch;
+  char ch = '\0', stream_source = 's';
+  FILE *input = stdin;
 
-  while((ch = getopt(argc, argv, "dn:")) != -1) {
+  while((ch = getopt(argc, argv, "dn:f:")) != -1) {
     switch(ch) {
       case 'd':
         should_increment = 0;
         break;
       case 'n':
         offset = abs(atoi(optarg));
+        break;
+      case 'f':
+        input = fopen(optarg, "r");
+        if(input == NULL) { die("Could not open input file"); }
+        stream_source = 'f';
         break;
       default:
         break;
@@ -85,9 +97,10 @@ int main(int argc, char *argv[])
   }
 
   char source[BUFFER_SIZE];
+  source[0] = '\0';
   char *destination = strdup(source);
 
-  while(fgets(source, BUFFER_SIZE, stdin)) {
+  while(fgets(source, BUFFER_SIZE, input)) {
     for(i = 0; source[i] != '\0'; i++) {
       if(can_shift(source[i])) {
         destination[i] = shift_character(source[i], offset);
@@ -98,6 +111,12 @@ int main(int argc, char *argv[])
 
     puts(destination);
   }
+
+  if(stream_source == 'f') {
+    fclose(input);
+  }
+
+  free(destination);
 
   return 0;
 }
