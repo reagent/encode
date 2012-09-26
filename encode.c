@@ -41,23 +41,6 @@ char previous_character(char source)
   return previous;
 }
 
-char shift_character(char source, int offset)
-{
-  int position = 0;
-  char shifted = source;
-
-  for(position = 0; position < abs(offset); position++) {
-    // TODO: use callbacks to supply shifting functions?
-    if(offset < 0) {
-      shifted = previous_character(shifted);
-    } else {
-      shifted = next_character(shifted);
-    }
-  }
-
-  return shifted;
-}
-
 int character_between(char character, char lower_limit, char upper_limit)
 {
   return character >= lower_limit && character <= upper_limit;
@@ -66,6 +49,25 @@ int character_between(char character, char lower_limit, char upper_limit)
 int can_shift(char source)
 {
   return character_between(source, 'A', 'Z') || character_between(source, 'a', 'z');
+}
+
+char shift_character(char source, int offset)
+{
+  int position = 0;
+  char shifted = source;
+
+  if(can_shift(source)) {
+    for(position = 0; position < abs(offset); position++) {
+      // TODO: use callbacks to supply shifting functions?
+      if(offset < 0) {
+        shifted = previous_character(shifted);
+      } else {
+        shifted = next_character(shifted);
+      }
+    }
+  }
+
+  return shifted;
 }
 
 int main(int argc, char *argv[])
