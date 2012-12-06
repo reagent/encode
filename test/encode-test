@@ -1,0 +1,147 @@
+#!/usr/bin/env ruby
+
+# Usage: ./test/encode-test
+
+require 'fileutils'
+
+def directory(path)
+  path = File.expand_path(path)
+  if File.directory?(path)
+    path
+  else
+    File.dirname(path)
+  end
+end
+
+def assert(number, value, message)
+  label = sprintf('Test % 3s', "##{number}")
+
+  if value == true
+    puts "#{label}: PASS"
+  else
+    puts "#{label}: FAIL"
+    puts "Expected: #{message}"
+  end
+end
+
+def assert_true(number, actual)
+  assert(number, actual == true, "'true', got '#{actual.inspect}'")
+end
+
+def assert_equal(number, actual, expected)
+  assert(number, actual.chomp == expected, "'#{expected.inspect}', got '#{actual.inspect}'")
+end
+
+def stdin(input)
+  "echo '#{input}'"
+end
+
+def file(file_path, content, options = {})
+  File.open(file_path, 'w') {|f| f << 'abc' }
+  FileUtils.chmod(options[:mode], file_path) if options[:mode]
+
+  "-f #{file_path}"
+end
+
+path       = `pwd`.chomp
+make_file  = "#{path}/Makefile"
+binary     = "#{path}/encode"
+input_file = "#{path}/src.dat"
+
+if !File.exist?(make_file)
+  puts "Could not locate Makefile: '#{make_file}'"
+  exit(1)
+end
+
+puts "Building encode.c from Makefile"
+`make clean && make`
+
+if !$?.success?
+  puts "Compilation failed."
+  exit(1)
+end
+
+## Test 1: Basic input from stdin
+output = `#{stdin('abc')} | #{binary}`
+assert_equal(1, output, 'bcd')
+
+## Test 2: Specify alternate shift
+output = `#{stdin('abc')} | #{binary} -n2`
+assert_equal(2, output, 'cde')
+
+## Test 3: Handling non word characters
+output = `#{stdin('hi.')} | #{binary}`
+assert_equal(3, output, 'ij.')
+
+## Test 4: Specify negative shift
+output = `#{stdin('abc')} | #{binary} -n-1`
+assert_equal(4, output, 'bcd')
+
+## Test 5: Try with 'Z'
+output = `#{stdin('Z')} | #{binary}`
+assert_equal(5, output, 'a')
+
+## Test 6: Try with 'z'
+output = `#{stdin('z')} | #{binary}`
+assert_equal(6, output, 'A')
+
+## Test 7: Non-printable characters
+output = `#{stdin("\t")} | #{binary}`
+assert_equal(7, output, "\t")
+
+## Test 8: Decode
+output = `#{stdin('bcd')} | #{binary} -d`
+assert_equal(8, output, 'abc')
+
+## Test 9: Try with 'A'
+output = `#{stdin('A')} | #{binary} -d`
+assert_equal(9, output, 'z')
+
+# Test 10: Try with 'a'
+output = `#{stdin('a')} | #{binary} -d`
+assert_equal(10, output, 'Z')
+
+## Test 11: Multi-line input
+content = <<-EOF
+Hi
+there
+
+guy.
+EOF
+
+expected =<<-EOF
+Ij
+uifsf
+
+hvz.
+EOF
+
+output = `#{stdin(content)} | #{binary}`
+assert_equal(11, output, expected)
+
+## Test 12: Chaining
+output = `#{stdin('abc')} | #{binary} | #{binary} -d`
+assert_equal(12, output, 'abc')
+
+## Test 13: Read from file
+output = `#{binary} #{file(input_file, 'abc')}`
+assert_equal(13, output, 'bcd')
+
+## Test 14: Chaining with file input
+output = `#{binary} #{file(input_file, 'abc')} | #{binary} -d`
+assert_equal(14, output, 'abc')
+
+## Test 15: Try reading from non-existent file
+output = `#{binary} -f bogus.dat`
+assert_true(15, $?.exitstatus == 1)
+
+## Test 16: Try reading from a file that isn't readable
+output = `#{binary} #{file(input_file, nil, :mode => 0000)}`
+assert_true(16, $?.exitstatus == 1)
+
+## Test 17: Valgrind with stdin
+output = `valgrind -q --error-exitcode=123 #{stdin('abc')} | #{binary}`
+assert_true(17, $?.exitstatus != 123)
+
+## Clean up
+FileUtils.rm(input_file)

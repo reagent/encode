@@ -4,5 +4,10 @@ LDFLAGS=-L${PREFIX}/apr/lib -lapr-1 -pthread
 
 all: encode
 
+encode: source.o char.o
+
+check:
+	./test/encode-test
+
 clean:
 	rm -rf encode *.o *.dSYM
