@@ -3,9 +3,7 @@
 #include <stdlib.h>
 
 // APR includes
-#include <apr_getopt.h>
-#include <apr_file_io.h>
-#include <apr_strings.h>
+#include <apr_pools.h>
 
 // Local includes
 #include "error.h"

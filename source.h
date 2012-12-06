@@ -1,6 +1,8 @@
 #ifndef SOURCE_H
 #define SOURCE_H
 
+#include <apr_file_io.h>
+
 typedef struct Source {
     apr_int64_t shift_direction;
     int shift_offset;
