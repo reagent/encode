@@ -13,6 +13,7 @@
 int
 main(int argc, const char *argv[])
 {
+    int result = 0;
     apr_pool_t *mp;
     apr_status_t status;
     char next_char;
@@ -35,16 +36,15 @@ main(int argc, const char *argv[])
         printf("%c", next_char);
     }
 
-    source_cleanup(source);
-    apr_pool_destroy(mp);
-    apr_terminate();
-
-    return 0;
+    goto cleanup;
 
 error:
+    result = 1;
+
+cleanup:
     if (source) { source_cleanup(source); }
     apr_pool_destroy(mp);
     apr_terminate();
 
-    return 1;
+    return result;
 }
